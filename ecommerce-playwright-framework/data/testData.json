@@ -1,0 +1,69 @@
+{
+  "loginErrorScenarios": [
+    {
+      "title": "locked out user",
+      "username": "locked_out_user",
+      "password": null,
+      "errorMsg": "Epic sadface: Sorry, this user has been locked out."
+    },
+    {
+      "title": "wrong password",
+      "username": "standard_user",
+      "password": "wrong_password",
+      "errorMsg": "Epic sadface: Username and password do not match any user in this service"
+    },
+    {
+      "title": "unknown username",
+      "username": "unknown_user",
+      "password": null,
+      "errorMsg": "Epic sadface: Username and password do not match any user in this service"
+    },
+    {
+      "title": "empty username",
+      "username": "",
+      "password": null,
+      "errorMsg": "Epic sadface: Username is required"
+    },
+    {
+      "title": "empty password",
+      "username": "standard_user",
+      "password": "",
+      "errorMsg": "Epic sadface: Password is required"
+    }
+  ],
+  "sortScenarios": [
+    { "option": "az", "label": "Name (A to Z)", "by": "name", "order": "asc" },
+    { "option": "za", "label": "Name (Z to A)", "by": "name", "order": "desc" },
+    { "option": "lohi", "label": "Price (low to high)", "by": "price", "order": "asc" },
+    { "option": "hilo", "label": "Price (high to low)", "by": "price", "order": "desc" }
+  ],
+  "products": [
+    "Sauce Labs Backpack",
+    "Sauce Labs Bike Light"
+  ],
+  "customerInfo": {
+    "firstName": "Pubudu",
+    "lastName": "Gunawardhana",
+    "postalCode": "90000"
+  },
+  "checkoutErrorScenarios": [
+    {
+      "title": "first name is empty",
+      "emptyField": "firstName",
+      "errorMsg": "Error: First Name is required"
+    },
+    {
+      "title": "last name is empty",
+      "emptyField": "lastName",
+      "errorMsg": "Error: Last Name is required"
+    },
+    {
+      "title": "postal code is empty",
+      "emptyField": "postalCode",
+      "errorMsg": "Error: Postal Code is required"
+    }
+  ],
+  "messages": {
+    "orderComplete": "Thank you for your order!"
+  }
+}
