@@ -1,4 +1,5 @@
 const { test, expect } = require('../fixtures/pageFixtures');
+const { labelTest, Severity } = require('../utils/allure');
 const testData = require('../data/testData.json');
 
 test.describe('Checkout', () => {
@@ -10,32 +11,39 @@ test.describe('Checkout', () => {
     cartPage,
     checkoutPage,
   }) => {
-    // 1. Add products to the cart
-    await inventoryPage.goto();
-    await inventoryPage.addProductsToCart(testData.products);
-    await expect(inventoryPage.cartBadge).toHaveText(String(testData.products.length));
+    await labelTest({ feature: 'Checkout', story: 'Place an order', severity: Severity.BLOCKER });
 
-    // 2. Verify the cart contains exactly those products.
+    await test.step('Add products to the cart', async () => {
+      await inventoryPage.goto();
+      await inventoryPage.addProductsToCart(testData.products);
+      await expect(inventoryPage.cartBadge).toHaveText(String(testData.products.length));
+    });
+
     // toHaveText retries until the cart page has loaded, so it never reads the old inventory page.
-    await inventoryPage.goToCart();
-    await expect(cartPage.itemNames).toHaveText(testData.products);
-    const cartPrices = await cartPage.getItemPrices();
+    const cartPrices = await test.step('Verify the cart contains exactly those products', async () => {
+      await inventoryPage.goToCart();
+      await expect(cartPage.itemNames).toHaveText(testData.products);
+      return cartPage.getItemPrices();
+    });
 
-    // 3. Enter customer information
-    await cartPage.checkout();
-    await checkoutPage.fillCustomerInfo(testData.customerInfo);
-    await checkoutPage.continueToOverview();
+    await test.step('Enter customer information', async () => {
+      await cartPage.checkout();
+      await checkoutPage.fillCustomerInfo(testData.customerInfo);
+      await checkoutPage.continueToOverview();
+    });
 
-    // 4. Verify the price calculation on the overview page
-    const expectedSubtotal = cartPrices.reduce((sum, price) => sum + price, 0);
-    const tax = await checkoutPage.getTax();
-    expect(await checkoutPage.getSubtotal()).toBeCloseTo(expectedSubtotal, 2);
-    expect(await checkoutPage.getTotal()).toBeCloseTo(expectedSubtotal + tax, 2);
+    await test.step('Verify subtotal, tax and total', async () => {
+      const expectedSubtotal = cartPrices.reduce((sum, price) => sum + price, 0);
+      const tax = await checkoutPage.getTax();
+      expect(await checkoutPage.getSubtotal()).toBeCloseTo(expectedSubtotal, 2);
+      expect(await checkoutPage.getTotal()).toBeCloseTo(expectedSubtotal + tax, 2);
+    });
 
-    // 5. Place the order and verify the confirmation
-    await checkoutPage.finishOrder();
-    await expect(checkoutPage.completeHeader).toHaveText(testData.messages.orderComplete);
-    await expect(page).toHaveURL(/checkout-complete\.html/);
+    await test.step('Place the order and verify the confirmation', async () => {
+      await checkoutPage.finishOrder();
+      await expect(checkoutPage.completeHeader).toHaveText(testData.messages.orderComplete);
+      await expect(page).toHaveURL(/checkout-complete\.html/);
+    });
   });
 
   // Data-driven: one test per required field in testData.json
@@ -45,15 +53,23 @@ test.describe('Checkout', () => {
       cartPage,
       checkoutPage,
     }) => {
-      await inventoryPage.goto();
-      await inventoryPage.addProductToCart(testData.products[0]);
-      await cartPage.goto();
-      await cartPage.checkout();
+      await labelTest({ feature: 'Checkout', story: 'Form validation', severity: Severity.NORMAL });
 
-      await checkoutPage.fillCustomerInfo({ ...testData.customerInfo, [scenario.emptyField]: '' });
-      await checkoutPage.continueToOverview();
+      await test.step('Add a product and start checkout', async () => {
+        await inventoryPage.goto();
+        await inventoryPage.addProductToCart(testData.products[0]);
+        await cartPage.goto();
+        await cartPage.checkout();
+      });
 
-      await expect(checkoutPage.errorMessage).toHaveText(scenario.errorMsg);
+      await test.step(`Submit the form with ${scenario.title}`, async () => {
+        await checkoutPage.fillCustomerInfo({ ...testData.customerInfo, [scenario.emptyField]: '' });
+        await checkoutPage.continueToOverview();
+      });
+
+      await test.step('Verify the error message', async () => {
+        await expect(checkoutPage.errorMessage).toHaveText(scenario.errorMsg);
+      });
     });
   }
 });
