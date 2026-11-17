@@ -1,0 +1,99 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  # Allows running the workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write      # Needed to publish the Allure report to GitHub Pages
+  id-token: write   # Needed by actions/deploy-pages
+
+# Only one Pages deployment at a time
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # The framework lives in a subfolder of this repository
+  PROJECT_DIR: ecommerce-playwright-framework
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ecommerce-playwright-framework
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: npm
+        cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    # Brings back the history of earlier runs so the Allure report can show trends
+    - name: Restore Allure history
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ env.PROJECT_DIR }}/allure-history
+        key: allure-history-${{ github.run_id }}
+        restore-keys: allure-history-
+
+    - name: Run Playwright tests
+      run: npx playwright test
+      env:
+        BASE_URL: https://www.saucedemo.com
+        STANDARD_USER: ${{ secrets.STANDARD_USER }}
+        USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+
+    # The steps below also run when tests fail, so the report shows the failures
+    - name: Generate Allure report
+      if: ${{ !cancelled() }}
+      run: npx allure generate ./allure-results
+
+    - name: Save Allure history
+      if: ${{ !cancelled() }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ env.PROJECT_DIR }}/allure-history
+        key: allure-history-${{ github.run_id }}
+
+    - name: Upload Playwright HTML report
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report
+        path: ${{ env.PROJECT_DIR }}/playwright-report/
+        retention-days: 30
+
+    - name: Upload Allure report for GitHub Pages
+      if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ${{ env.PROJECT_DIR }}/allure-report
+
+  deploy-report:
+    # Publish the report even when some tests failed, but never for pull requests
+    needs: test
+    if: ${{ always() && needs.test.result != 'cancelled' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy Allure report to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

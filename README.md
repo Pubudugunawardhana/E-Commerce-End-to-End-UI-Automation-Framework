@@ -1,5 +1,9 @@
 # E-Commerce End-to-End UI Automation Framework
 
+[![Playwright Tests](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions/workflows/playwright.yml)
+
+**📊 [View the live Allure test report](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)**
+
 An end-to-end UI test automation framework for the [Sauce Demo](https://www.saucedemo.com) e-commerce site, built with **Playwright** and **JavaScript**.
 
 It covers login, product sorting, the shopping cart, and the full checkout flow. The suite runs on **Chromium, Firefox and WebKit**.
@@ -13,14 +17,16 @@ It covers login, product sorting, the shopping cart, and the full checkout flow.
 - **Environment variables.** The URL and credentials are read from `.env` and are not committed to Git.
 - **Debugging on failure.** A failed test keeps a screenshot, a video and a trace file.
 - **Cross-browser.** The suite runs on Chromium, Firefox and WebKit.
-- **CI ready.** A GitHub Actions workflow runs the tests on every push and pull request.
+- **CI/CD.** A GitHub Actions workflow runs the tests on every push and pull request.
+- **Allure report.** Every push to `main` publishes an Allure report with history and trends to GitHub Pages.
 
 ## Project structure
 
 ```
+.github/workflows/
+└── playwright.yml            # GitHub Actions CI pipeline
+
 ecommerce-playwright-framework/
-├── .github/workflows/
-│   └── playwright.yml        # GitHub Actions CI pipeline
 ├── data/
 │   └── testData.json         # Test scenarios and data
 ├── fixtures/
@@ -40,6 +46,7 @@ ecommerce-playwright-framework/
 │   ├── constants.js
 │   └── price.js              # Parses "$29.99" style price labels
 ├── .env.example
+├── allurerc.mjs              # Allure report configuration
 └── playwright.config.js
 ```
 
@@ -47,8 +54,11 @@ ecommerce-playwright-framework/
 
 **Prerequisites:** Node.js 18 or later.
 
+All commands run from inside the `ecommerce-playwright-framework` folder.
+
 ```bash
 # 1. Install dependencies and browsers
+cd ecommerce-playwright-framework
 npm install
 npx playwright install
 
@@ -73,7 +83,26 @@ USER_PASSWORD=secret_sauce
 | `npm run test:headed` | Run on Chromium with the browser window visible |
 | `npm run test:ui` | Open Playwright's interactive UI mode |
 | `npm run test:debug` | Step through tests with the Playwright Inspector |
-| `npm run report` | Open the HTML report from the last run |
+| `npm run report` | Open the Playwright HTML report from the last run |
+| `npm run test:allure` | Run all tests and build the Allure report |
+| `npm run allure:open` | Open the Allure report in the browser |
+
+## Allure report
+
+Every test run writes raw results to `allure-results/`. Allure turns them into a report with:
+
+- pass and fail charts per suite and per browser
+- history and trends across runs (stored in `allure-history/`)
+- the steps of each test, with the screenshot, video and trace attached to each failed test
+
+To build the report locally:
+
+```bash
+npm run test:allure    # run the tests and generate the report
+npm run allure:open    # open it in the browser
+```
+
+This project uses [Allure Report 3](https://allurereport.org), which runs on Node.js and does not need Java.
 
 ## Test cases
 
@@ -97,12 +126,21 @@ In `loginErrorScenarios`, `"password": null` means "use the valid password from 
 
 ## CI (GitHub Actions)
 
-The workflow in `.github/workflows/playwright.yml` runs the full suite on every push and pull request to `main` or `master`. It then uploads the HTML report as a build artifact.
+The workflow in `.github/workflows/playwright.yml` does the following:
 
-The workflow needs two repository secrets. Add them under **Settings → Secrets and variables → Actions**:
+1. It runs the full suite on every push and pull request to `main` or `master`. You can also start it by hand from the **Actions** tab.
+2. It builds the Allure report, keeping the history of earlier runs.
+3. On every push, it publishes the Allure report to GitHub Pages. Pull requests are not published.
+4. It uploads the Playwright HTML report as a build artifact.
 
-- `STANDARD_USER`
-- `USER_PASSWORD`
+The report is published even when some tests fail, so the failures can be inspected online.
+
+**One-time setup:**
+
+1. Add two repository secrets under **Settings → Secrets and variables → Actions**:
+   - `STANDARD_USER`
+   - `USER_PASSWORD`
+2. Under **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**.
 
 ## Debugging a failed test
 

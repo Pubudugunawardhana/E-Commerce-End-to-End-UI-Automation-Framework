@@ -19,7 +19,11 @@ module.exports = defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [
+    ['list'],                                                   // Progress in the terminal
+    ['html'],                                                   // Playwright's built-in report
+    ['allure-playwright', { resultsDir: 'allure-results' }],    // Raw results for the Allure report
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL comes from the .env file (or CI environment variables) */
