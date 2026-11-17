@@ -23,8 +23,8 @@
     "test-automation",
     "page-object-model"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Pubudu Gunawardhana",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.65.1",

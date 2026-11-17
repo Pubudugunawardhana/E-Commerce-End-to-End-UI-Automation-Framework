@@ -1,151 +1,259 @@
-# E-Commerce End-to-End UI Automation Framework
+<div align="center">
+
+# 🛒 E-Commerce End-to-End UI Automation Framework
+
+**A production-style test automation framework built with Playwright and JavaScript.**
+It tests a real e-commerce flow from login to order confirmation on three browsers, and publishes a live Allure report on every push.
 
 [![Playwright Tests](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions/workflows/playwright.yml)
+[![Allure Report](https://img.shields.io/badge/Allure-Live%20Report-orange?logo=qameta&logoColor=white)](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**📊 [View the live Allure test report](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)**
+![Playwright](https://img.shields.io/badge/Playwright-2EAD33?logo=playwright&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
 
-An end-to-end UI test automation framework for the [Sauce Demo](https://www.saucedemo.com) e-commerce site, built with **Playwright** and **JavaScript**.
+**[📊 Live Test Report](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)** ·
+**[⚙️ CI Runs](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions)** ·
+**[🚀 Quick Start](#-quick-start)**
 
-It covers login, product sorting, the shopping cart, and the full checkout flow. The suite runs on **Chromium, Firefox and WebKit**.
+</div>
 
-## Features
+---
 
-- **Page Object Model (POM).** Each page's locators and actions live in their own class.
-- **Custom fixtures.** Tests receive ready-made page objects (`loginPage`, `inventoryPage`, ...) without creating them by hand.
-- **Data-driven tests.** Test scenarios are stored in `data/testData.json`, and a single test runs once for each scenario.
-- **Log in once.** A setup step logs in once and saves the session, so the other tests start already logged in.
-- **Environment variables.** The URL and credentials are read from `.env` and are not committed to Git.
-- **Debugging on failure.** A failed test keeps a screenshot, a video and a trace file.
-- **Cross-browser.** The suite runs on Chromium, Firefox and WebKit.
-- **CI/CD.** A GitHub Actions workflow runs the tests on every push and pull request.
-- **Allure report.** Every push to `main` publishes an Allure report with history and trends to GitHub Pages.
+## 📑 Table of contents
 
-## Project structure
+- [Highlights](#-highlights)
+- [Live report](#-live-report)
+- [Test coverage](#-test-coverage)
+- [Architecture](#️-architecture)
+- [Quick start](#-quick-start)
+- [Commands](#-commands)
+- [CI/CD pipeline](#-cicd-pipeline)
+- [Project structure](#-project-structure)
+- [Adding test data](#-adding-test-data)
+- [Debugging a failed test](#-debugging-a-failed-test)
+- [Security](#-security)
+- [License](#-license)
 
+---
+
+## ✨ Highlights
+
+| | Feature | What it means |
+|---|---|---|
+| 🧱 | **Page Object Model** | Each page's locators and actions live in their own class. If the UI changes, the fix goes in one place. |
+| 🧩 | **Custom fixtures** | Tests ask for `loginPage`, `cartPage` and so on, and Playwright creates them. Tests don't need `new` statements. |
+| 📋 | **Data-driven tests** | Scenarios are stored in JSON. Add a row, and you get a new test without writing any code. |
+| ⚡ | **Log in once** | A setup step logs in once and saves the session, so the tests start already logged in. |
+| 🔐 | **Secrets in `.env`** | Credentials stay out of the code and out of Git. In CI they come from GitHub Secrets. |
+| 🌐 | **Cross-browser** | Every test runs on Chromium, Firefox and WebKit. |
+| 📊 | **Allure reporting** | Severity levels, features and stories, step-by-step logs, and history trends. |
+| 🎥 | **Debugging on failure** | A failed test keeps a screenshot, a video and a Playwright trace. |
+| 🚀 | **CI/CD** | Every push runs the suite in GitHub Actions and deploys the report to GitHub Pages. |
+
+---
+
+## 📊 Live report
+
+The latest results are always online. No setup is needed:
+**👉 [pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)**
+
+<p align="center">
+  <img src="docs/images/allure-report.png" alt="Allure report showing 49 of 49 tests passed" width="850">
+</p>
+
+---
+
+## 🧪 Test coverage
+
+The tests run against [Sauce Demo](https://www.saucedemo.com), a public demo shop built for practising test automation.
+
+| ID | Scenario | Feature | Severity | Runs |
+|---|---|---|---|---|
+| TC01 | A valid user can log in | Login | 🔴 Blocker | 1 |
+| TC02 | Login fails with the right error message: locked out user, wrong password, unknown user, empty username, empty password | Login | 🟠 Critical | 5 |
+| TC03 | Products sort correctly: name A–Z and Z–A, price low–high and high–low | Product catalogue | 🟢 Normal | 4 |
+| TC04 | Adding and removing products updates the cart badge | Shopping cart | 🟠 Critical | 1 |
+| TC05 | A user can log out | Login | 🟢 Normal | 1 |
+| TC06 | **Full checkout:** add products, check the cart, enter customer details, check the subtotal, tax and total, and place the order | Checkout | 🔴 Blocker | 1 |
+| TC07 | Checkout shows an error for each missing required field | Checkout | 🟢 Normal | 3 |
+
+That makes **16 tests per browser × 3 browsers = 48 tests**, plus 1 login setup step.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    T["🧪 Tests<br/><i>tests/*.spec.js</i>"] --> F["🧩 Fixtures<br/><i>pageFixtures.js</i>"]
+    F --> P["🧱 Page Objects<br/><i>pages/*.js</i>"]
+    T --> D["📋 Test Data<br/><i>testData.json</i>"]
+    T --> E["🔐 Environment<br/><i>.env</i>"]
+    P --> B(("🌐 Browser<br/>Chromium · Firefox · WebKit"))
 ```
-.github/workflows/
-└── playwright.yml            # GitHub Actions CI pipeline
 
-ecommerce-playwright-framework/
-├── data/
-│   └── testData.json         # Test scenarios and data
-├── fixtures/
-│   └── pageFixtures.js       # Extends Playwright's test with page objects
-├── pages/
-│   ├── LoginPage.js
-│   ├── InventoryPage.js
-│   ├── CartPage.js
-│   └── CheckoutPage.js
-├── tests/
-│   ├── auth.setup.js         # Logs in once and saves the session
-│   ├── login.spec.js
-│   ├── inventory.spec.js
-│   └── e2eCheckout.spec.js
-├── utils/
-│   ├── env.js                # Loads and validates environment variables
-│   ├── constants.js
-│   └── price.js              # Parses "$29.99" style price labels
-├── .env.example
-├── allurerc.mjs              # Allure report configuration
-└── playwright.config.js
-```
+- **Tests** describe *what* to check, in business language.
+- **Page objects** know *how* to interact with each page.
+- **Data and environment** keep values out of the code, so the same test can run with different data.
 
-## Getting started
+---
 
-**Prerequisites:** Node.js 18 or later.
+## 🚀 Quick start
 
-All commands run from inside the `ecommerce-playwright-framework` folder.
+**Prerequisites:** [Node.js](https://nodejs.org) 22.18 or later (the Allure CLI needs it), and Git.
 
 ```bash
-# 1. Install dependencies and browsers
-cd ecommerce-playwright-framework
+# 1. Clone the repository and go into the framework folder
+git clone https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework.git
+cd E-Commerce-End-to-End-UI-Automation-Framework/ecommerce-playwright-framework
+
+# 2. Install dependencies and browsers
 npm install
 npx playwright install
 
-# 2. Create your .env file
+# 3. Create your environment file
 cp .env.example .env
 ```
 
-Then fill in `.env`. The Sauce Demo login page lists its public test credentials.
+Fill in `.env`. Sauce Demo shows its public test credentials on its login page:
 
-```
+```env
 BASE_URL=https://www.saucedemo.com
 STANDARD_USER=standard_user
 USER_PASSWORD=secret_sauce
 ```
 
-## Running tests
-
-| Command | What it does |
-|---|---|
-| `npm test` | Run all tests on all three browsers |
-| `npm run test:chromium` | Run on Chromium only (`test:firefox` and `test:webkit` also exist) |
-| `npm run test:headed` | Run on Chromium with the browser window visible |
-| `npm run test:ui` | Open Playwright's interactive UI mode |
-| `npm run test:debug` | Step through tests with the Playwright Inspector |
-| `npm run report` | Open the Playwright HTML report from the last run |
-| `npm run test:allure` | Run all tests and build the Allure report |
-| `npm run allure:open` | Open the Allure report in the browser |
-
-## Allure report
-
-Every test run writes raw results to `allure-results/`. Allure turns them into a report with:
-
-- pass and fail charts per suite and per browser
-- history and trends across runs (stored in `allure-history/`)
-- the steps of each test, with the screenshot, video and trace attached to each failed test
-
-To build the report locally:
-
 ```bash
-npm run test:allure    # run the tests and generate the report
-npm run allure:open    # open it in the browser
+# 4. Run the tests
+npm test
 ```
 
-This project uses [Allure Report 3](https://allurereport.org), which runs on Node.js and does not need Java.
+> [!IMPORTANT]
+> Run all commands from inside the `ecommerce-playwright-framework` folder. If you run them from the repository root, Playwright can't find its config.
 
-## Test cases
+---
 
-| ID | Test | File |
-|---|---|---|
-| TC01 | A valid user can log in | `login.spec.js` |
-| TC02 | Login fails with the correct error message (5 data-driven scenarios: locked out user, wrong password, unknown user, empty username, empty password) | `login.spec.js` |
-| TC03 | Products sort correctly (4 data-driven scenarios: name A–Z and Z–A, price low–high and high–low) | `inventory.spec.js` |
-| TC04 | Adding and removing products updates the cart badge | `inventory.spec.js` |
-| TC05 | A user can log out | `inventory.spec.js` |
-| TC06 | Full checkout flow: add products, check the cart, enter customer details, check the subtotal, tax and total, and place the order | `e2eCheckout.spec.js` |
-| TC07 | Checkout shows an error for each missing required field (3 data-driven scenarios) | `e2eCheckout.spec.js` |
+## 💻 Commands
 
-These 7 test cases expand to 16 tests per browser, which makes 48 tests across the three browsers, plus 1 login setup step.
+| Command | Description |
+|---|---|
+| `npm test` | Run every test on all three browsers |
+| `npm run test:chromium` | Run on one browser (`test:firefox` and `test:webkit` also exist) |
+| `npm run test:headed` | Watch the browser while the tests run |
+| `npm run test:ui` | Open Playwright's interactive UI mode |
+| `npm run test:debug` | Step through a test with the Playwright Inspector |
+| `npm run report` | Open the Playwright HTML report |
+| `npm run test:allure` | Run the tests and build the Allure report |
+| `npm run allure:open` | Open the Allure report |
 
-## Adding test data
+---
 
-Add a new object to the matching array in `data/testData.json`, and a new test is generated for it automatically. You don't need to change any code.
+## 🔄 CI/CD pipeline
 
-In `loginErrorScenarios`, `"password": null` means "use the valid password from `.env`".
+```mermaid
+flowchart LR
+    A["📤 git push"] --> B["⚙️ GitHub Actions"]
+    B --> C["🔑 Log in once<br/>(setup)"]
+    C --> D["🧪 48 tests<br/>× 3 browsers"]
+    D --> E["📊 Allure report<br/>+ history"]
+    E --> F["🌍 GitHub Pages"]
+```
 
-## CI (GitHub Actions)
+1. Every push and pull request to `main` triggers the workflow. You can also start it by hand from the **Actions** tab.
+2. The full suite runs. Credentials come from GitHub Secrets.
+3. An Allure report is built. It keeps the history of earlier runs, so trends show up.
+4. On every push, the report is deployed to GitHub Pages. This happens even when tests fail, so the failures can be inspected online. Pull requests are not deployed.
 
-The workflow in `.github/workflows/playwright.yml` does the following:
+<details>
+<summary><b>One-time setup for your own fork</b></summary>
 
-1. It runs the full suite on every push and pull request to `main` or `master`. You can also start it by hand from the **Actions** tab.
-2. It builds the Allure report, keeping the history of earlier runs.
-3. On every push, it publishes the Allure report to GitHub Pages. Pull requests are not published.
-4. It uploads the Playwright HTML report as a build artifact.
-
-The report is published even when some tests fail, so the failures can be inspected online.
-
-**One-time setup:**
-
-1. Add two repository secrets under **Settings → Secrets and variables → Actions**:
-   - `STANDARD_USER`
-   - `USER_PASSWORD`
+1. Add two repository secrets under **Settings → Secrets and variables → Actions**: `STANDARD_USER` and `USER_PASSWORD`.
 2. Under **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**.
 
-## Debugging a failed test
+</details>
 
-When a test fails, its screenshot, video and trace are saved under `test-results/`. To inspect them, open the report with `npm run report`, or open a trace directly:
+---
+
+## 📁 Project structure
+
+```
+.
+├── .github/workflows/
+│   └── playwright.yml          # CI: test → Allure report → GitHub Pages
+├── docs/images/                # Screenshots for this README
+└── ecommerce-playwright-framework/
+    ├── data/
+    │   └── testData.json       # All test scenarios and data
+    ├── fixtures/
+    │   └── pageFixtures.js     # Gives tests ready-made page objects
+    ├── pages/                  # Page Object Model
+    │   ├── LoginPage.js
+    │   ├── InventoryPage.js
+    │   ├── CartPage.js
+    │   └── CheckoutPage.js
+    ├── tests/
+    │   ├── auth.setup.js       # Logs in once and saves the session
+    │   ├── login.spec.js
+    │   ├── inventory.spec.js
+    │   └── e2eCheckout.spec.js
+    ├── utils/
+    │   ├── allure.js           # Allure label helper (feature, story, severity)
+    │   ├── env.js              # Loads and validates environment variables
+    │   ├── constants.js
+    │   └── price.js            # Parses "$29.99" style price labels
+    ├── .env.example
+    ├── allurerc.mjs            # Allure report settings
+    └── playwright.config.js
+```
+
+---
+
+## 📋 Adding test data
+
+Add a new object to the matching array in [`testData.json`](ecommerce-playwright-framework/data/testData.json). A new test is generated for it automatically:
+
+```json
+{
+  "title": "password with spaces",
+  "username": "standard_user",
+  "password": "secret sauce",
+  "errorMsg": "Epic sadface: Username and password do not match any user in this service"
+}
+```
+
+> [!TIP]
+> In `loginErrorScenarios`, `"password": null` means "use the valid password from `.env`".
+
+---
+
+## 🐞 Debugging a failed test
+
+Each failed test saves a **screenshot**, a **video** and a **trace** in `test-results/`. You can open them from either report, or open a trace directly:
 
 ```bash
 npx playwright show-trace test-results/<test-folder>/trace.zip
 ```
+
+The trace viewer replays the test step by step. It shows the DOM, the network calls and the console output for each action.
+
+---
+
+## 🔒 Security
+
+Credentials are never committed. Locally they are read from `.env`, which is git-ignored, and in CI they come from GitHub Secrets.
+To report a vulnerability, follow the steps in [SECURITY.md](SECURITY.md).
+
+---
+
+## 📄 License
+
+This project is released under the [MIT License](LICENSE).
+
+<div align="center">
+
+<sub>Built with ❤️ using Playwright · ⭐ Star this repo if you found it useful!</sub>
+
+</div>
