@@ -65,5 +65,25 @@
   ],
   "messages": {
     "orderComplete": "Thank you for your order!"
+  },
+  "networkFailureScenarios": [
+    {
+      "title": "product images fail to load",
+      "urlPattern": "\\.(jpe?g|png|svg)(\\?.*)?$",
+      "status": null
+    },
+    {
+      "title": "web fonts fail to load",
+      "urlPattern": "fonts\\.(googleapis|gstatic)\\.com",
+      "status": null
+    },
+    {
+      "title": "the error-reporting service returns HTTP 503",
+      "urlPattern": "backtrace\\.io",
+      "status": 503
+    }
+  ],
+  "network": {
+    "slowDelayMs": 1500
   }
 }

@@ -49,6 +49,7 @@ It tests a real e-commerce flow from login to order confirmation on three browse
 | ⚡ | **Log in once** | A setup step logs in once and saves the session, so the tests start already logged in. |
 | 🔐 | **Secrets in `.env`** | Credentials stay out of the code and out of Git. In CI they come from GitHub Secrets. |
 | 🌐 | **Cross-browser** | Every test runs on Chromium, Firefox and WebKit. |
+| 📡 | **Network mocking** | `page.route()` simulates failed requests, a mocked HTTP 503, a slow network and offline mode, and a monitor catches failed requests and JavaScript errors. |
 | 📊 | **Allure reporting** | Severity levels, features and stories, step-by-step logs, and history trends. |
 | 🎥 | **Debugging on failure** | A failed test keeps a screenshot, a video and a Playwright trace. |
 | 🚀 | **CI/CD** | Every push runs the suite in GitHub Actions and deploys the report to GitHub Pages. |
@@ -79,8 +80,15 @@ The tests run against [Sauce Demo](https://www.saucedemo.com), a public demo sho
 | TC05 | A user can log out | Login | 🟢 Normal | 1 |
 | TC06 | **Full checkout:** add products, check the cart, enter customer details, check the subtotal, tax and total, and place the order | Checkout | 🔴 Blocker | 1 |
 | TC07 | Checkout shows an error for each missing required field | Checkout | 🟢 Normal | 3 |
+| TC08 | The shop still works when product images fail, web fonts fail, or the error-reporting service returns **HTTP 503** (mocked) | Network resilience | 🟢 Normal | 3 |
+| TC09 | Checkout completes when every request is delayed (slow network) | Network resilience | 🟢 Normal | 1 |
+| TC10 | The cart and checkout keep working after the connection drops (offline mode) | Network resilience | 🟢 Normal | 1 |
+| TC11 | A full checkout makes no failed requests to the site and throws no JavaScript errors | Network resilience | 🟠 Critical | 1 |
 
-That makes **16 tests per browser × 3 browsers = 48 tests**, plus 1 login setup step.
+That makes **22 tests per browser × 3 browsers = 66 tests**, plus 1 login setup step.
+
+> [!NOTE]
+> **Found by TC11:** the server answers direct links to inner pages (for example `/inventory.html`) with **HTTP 404**, even though the React app still renders the page. The network tests therefore start from the login page, like a real user.
 
 ---
 
@@ -157,7 +165,7 @@ npm test
 flowchart LR
     A["📤 git push"] --> B["⚙️ GitHub Actions"]
     B --> C["🔑 Log in once<br/>(setup)"]
-    C --> D["🧪 48 tests<br/>× 3 browsers"]
+    C --> D["🧪 66 tests<br/>× 3 browsers"]
     D --> E["📊 Allure report<br/>+ history"]
     E --> F["🌍 GitHub Pages"]
 ```
@@ -198,11 +206,13 @@ flowchart LR
     │   ├── auth.setup.js       # Logs in once and saves the session
     │   ├── login.spec.js
     │   ├── inventory.spec.js
-    │   └── e2eCheckout.spec.js
+    │   ├── e2eCheckout.spec.js
+    │   └── network.spec.js     # Network mocking and monitoring
     ├── utils/
     │   ├── allure.js           # Allure label helper (feature, story, severity)
     │   ├── env.js              # Loads and validates environment variables
     │   ├── constants.js
+    │   ├── network.js          # Fail, delay and monitor network requests
     │   └── price.js            # Parses "$29.99" style price labels
     ├── .env.example
     ├── allurerc.mjs            # Allure report settings
