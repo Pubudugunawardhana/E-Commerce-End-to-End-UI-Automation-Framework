@@ -3,7 +3,7 @@
 # 🛒 E-Commerce End-to-End UI Automation Framework
 
 **A production-style test automation framework built with Playwright and JavaScript.**
-It tests a real e-commerce flow from login to order confirmation on three browsers, and publishes a live Allure report on every push.
+It tests a real e-commerce flow from login to order confirmation on three browsers, checks how the site copes with network failures, and publishes a live Allure report on every push.
 
 [![Playwright Tests](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/Pubudugunawardhana/E-Commerce-End-to-End-UI-Automation-Framework/actions/workflows/playwright.yml)
 [![Allure Report](https://img.shields.io/badge/Allure-Live%20Report-orange?logo=qameta&logoColor=white)](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)
@@ -27,6 +27,7 @@ It tests a real e-commerce flow from login to order confirmation on three browse
 - [Highlights](#-highlights)
 - [Live report](#-live-report)
 - [Test coverage](#-test-coverage)
+- [Network mocking](#-network-mocking)
 - [Architecture](#️-architecture)
 - [Quick start](#-quick-start)
 - [Commands](#-commands)
@@ -62,7 +63,7 @@ The latest results are always online. No setup is needed:
 **👉 [pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework](https://pubudugunawardhana.github.io/E-Commerce-End-to-End-UI-Automation-Framework/)**
 
 <p align="center">
-  <img src="docs/images/allure-report.png" alt="Allure report showing 49 of 49 tests passed" width="850">
+  <img src="docs/images/allure-report.png" alt="Allure report showing 67 of 67 tests passed" width="850">
 </p>
 
 ---
@@ -92,6 +93,34 @@ That makes **22 tests per browser × 3 browsers = 66 tests**, plus 1 login setup
 
 ---
 
+## 📡 Network mocking
+
+Real users don't always have a perfect connection. These tests use Playwright's network control to check how the shop behaves when things go wrong:
+
+| Technique | Playwright API | Used in |
+|---|---|---|
+| **Fail requests:** abort them, or return a mocked HTTP error | `page.route()` + `route.abort()` / `route.fulfill()` | TC08 |
+| **Slow network:** hold every request before letting it through | `page.route()` + `route.continue()` | TC09 |
+| **Offline mode:** cut the connection mid-session | `context.setOffline(true)` | TC10 |
+| **Monitoring:** record failed responses and uncaught errors | `page.on('response')`, `page.on('requestfailed')`, `page.on('pageerror')` | TC11 |
+
+The helpers live in [`utils/network.js`](ecommerce-playwright-framework/utils/network.js), and the failure scenarios are data-driven:
+
+```json
+{
+  "title": "the error-reporting service returns HTTP 503",
+  "urlPattern": "backtrace\\.io",
+  "status": 503
+}
+```
+
+Leave out `status` (or set it to `null`) to abort the request instead. Each test also checks that its mock actually intercepted requests, so a mock that silently matches nothing can't produce a false pass.
+
+> [!NOTE]
+> TC11 only fails on problems with the site under test. Third-party failures (Sauce Demo's error-reporting service already returns HTTP 401) are attached to the report as `network-problems.json` for visibility. Requests the browser cancels itself, for example when the page changes, are ignored.
+
+---
+
 ## 🏗️ Architecture
 
 ```mermaid
@@ -100,6 +129,8 @@ flowchart LR
     F --> P["🧱 Page Objects<br/><i>pages/*.js</i>"]
     T --> D["📋 Test Data<br/><i>testData.json</i>"]
     T --> E["🔐 Environment<br/><i>.env</i>"]
+    T --> N["📡 Network helpers<br/><i>network.js</i>"]
+    N -. "mock · delay · monitor" .-> B
     P --> B(("🌐 Browser<br/>Chromium · Firefox · WebKit"))
 ```
 
@@ -150,6 +181,7 @@ npm test
 |---|---|
 | `npm test` | Run every test on all three browsers |
 | `npm run test:chromium` | Run on one browser (`test:firefox` and `test:webkit` also exist) |
+| `npm run test:network` | Run only the network mocking tests (TC08–TC11) |
 | `npm run test:headed` | Watch the browser while the tests run |
 | `npm run test:ui` | Open Playwright's interactive UI mode |
 | `npm run test:debug` | Step through a test with the Playwright Inspector |
